@@ -8,6 +8,14 @@ define('DB_NAME', 'uXXXXX');   // ваш логин, он же имя БД
 define('DB_USER', 'uXXXXX');   // ваш логин
 define('DB_PASS', 'your_pass'); // ваш пароль
 
+// ─── Хелпер: подсчёт символов без mbstring ─────────────────────
+// Пробует iconv_strlen → mb_strlen → strlen (байты, но достаточно как лимит)
+function str_char_len($s) {
+    if (function_exists('iconv_strlen')) return iconv_strlen($s, 'UTF-8');
+    if (function_exists('mb_strlen'))   return mb_strlen($s, 'UTF-8');
+    return strlen($s); // байты; для ASCII-полей (email) это точно, для кириллицы — с запасом
+}
+
 // ─── Допустимые значения ───────────────────────────────────────
 $validLanguageIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 $validGenders     = ['male', 'female'];
@@ -29,9 +37,9 @@ $post   = $_POST;
 $fio = trim($post['fio'] ?? '');
 if ($fio === '') {
     $errors[] = 'Укажите ФИО.';
-} elseif (!preg_match('/^[\p{L} \-]+$/u', $fio)) {
+} elseif (!preg_match('/^[a-zA-ZА-Яа-яЁё \-]+$/', $fio)) {
     $errors[] = 'ФИО должно содержать только буквы, пробелы и дефисы.';
-} elseif (mb_strlen($fio) > 150) {
+} elseif (str_char_len($fio) > 150) {
     $errors[] = 'ФИО не должно превышать 150 символов.';
 }
 
@@ -49,7 +57,7 @@ if ($email === '') {
     $errors[] = 'Укажите e-mail.';
 } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $errors[] = 'Введите корректный e-mail адрес.';
-} elseif (mb_strlen($email) > 255) {
+} elseif (str_char_len($email) > 255) {
     $errors[] = 'E-mail слишком длинный.';
 }
 
@@ -96,7 +104,7 @@ if (!is_array($rawLangs) || count($rawLangs) === 0) {
 $biography = trim($post['biography'] ?? '');
 if ($biography === '') {
     $errors[] = 'Заполните биографию.';
-} elseif (mb_strlen($biography) > 10000) {
+} elseif (str_char_len($biography) > 10000) {
     $errors[] = 'Биография слишком длинная (максимум 10 000 символов).';
 }
 
